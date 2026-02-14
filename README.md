@@ -39,3 +39,24 @@ bun run format
 - `FLUXER_BOT_TOKEN` is set and correct.
 - The bot is authorized in the target community.
 - The bot has permission to read and send messages in the channel.
+
+## Docker (Compose)
+
+### Production
+Builds the image and runs the bot in detached production mode.
+
+```bash
+docker compose up --build -d
+```
+
+### Development
+Runs the bot in development mode using Bun with hot reload via the override compose file.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
+- Ensure a `.env` file exists in the project root.
+- It must contain `FLUXER_BOT_TOKEN`.
+- `.env` must not be committed.
+- Use `docker compose down` to stop containers.

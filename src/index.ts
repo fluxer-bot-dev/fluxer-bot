@@ -1,7 +1,7 @@
 import { Client, GatewayDispatchEvents } from '@discordjs/core';
 import { REST } from '@discordjs/rest';
 import { WebSocketManager } from '@discordjs/ws';
-import type { RESTGetAPIGatewayBotResult } from 'discord-api-types/v10';
+import { Routes, type RESTGetAPIGatewayBotResult } from 'discord-api-types/v10';
 
 import { API_BASE_URL, API_VERSION, BOT_TOKEN, GATEWAY_VERSION } from './config.js';
 
@@ -11,8 +11,10 @@ const gateway = new WebSocketManager({
   token: BOT_TOKEN,
   intents: 0,
   version: GATEWAY_VERSION,
-  fetchGatewayInformation: () =>
-    rest.get('/gateway/bot') as Promise<RESTGetAPIGatewayBotResult>,
+  rest,
+  fetchGatewayInformation() {
+    return rest.get(Routes.gatewayBot()) as Promise<RESTGetAPIGatewayBotResult>;
+  },
 });
 
 const client = new Client({ rest, gateway });

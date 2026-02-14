@@ -18,6 +18,11 @@ npm install
 npm run dev
 ```
 
+## Add Commands
+- Create a new file under `src/commands/` that exports `name` and `execute(client, message, args)`.
+- The file should be ESM/TypeScript and use `.js` extensions for relative imports.
+- Commands are loaded dynamically at startup; no manual registration needed.
+
 ## Build + Start
 ```bash
 npm run build

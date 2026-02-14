@@ -8,7 +8,7 @@ import { registerProcessHandlers } from './process.js';
 async function main() {
   const token = assertTokenPresent(BOT_TOKEN);
   const { gateway, client } = createFluxerClient(token);
-  registerHandlers(client);
+  await registerHandlers(client);
 
   const { shouldStop } = registerProcessHandlers();
   await runGatewayLoop(gateway, shouldStop);

@@ -14,8 +14,8 @@ cp .env.example .env
 
 ## Run
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ## Add Commands
@@ -25,8 +25,14 @@ npm run dev
 
 ## Build + Start
 ```bash
-npm run build
-npm start
+bun run build
+bun run start
+```
+
+## Lint + Format
+```bash
+bun run lint
+bun run format
 ```
 
 ## Troubleshooting

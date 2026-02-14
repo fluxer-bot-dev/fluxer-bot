@@ -5,6 +5,13 @@ import { Routes, type RESTGetAPIGatewayBotResult } from 'discord-api-types/v10';
 
 import { API_BASE_URL, API_VERSION, BOT_TOKEN, GATEWAY_VERSION } from './config.js';
 
+console.log('[boot] starting fluxer bot');
+if (!BOT_TOKEN) {
+  console.error('Missing FLUXER_BOT_TOKEN');
+  process.exit(1);
+}
+console.log('[boot] token present');
+
 const rest = new REST({ version: API_VERSION, api: API_BASE_URL }).setToken(BOT_TOKEN);
 
 const gateway = new WebSocketManager({
@@ -18,6 +25,10 @@ const gateway = new WebSocketManager({
 });
 
 const client = new Client({ rest, gateway });
+
+gateway.on('error', (error) => {
+  console.error('Gateway error:', error);
+});
 
 client.once(GatewayDispatchEvents.Ready, ({ data }) => {
   const user = data.user;
@@ -41,8 +52,15 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
+process.on('SIGINT', () => {
+  console.log('Received SIGINT, shutting down.');
+  process.exit(0);
+});
+
 async function main() {
+  console.log('[gateway] connecting...');
   await gateway.connect();
+  console.log('[gateway] connect() resolved');
 }
 
 main().catch((error) => {

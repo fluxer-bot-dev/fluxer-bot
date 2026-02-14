@@ -1,9 +1,10 @@
-export const name = 'ping';
+import type { Command } from '../types/command.js';
 
-export async function execute(
-  client: any,
-  message: any,
-  _args: string[],
-): Promise<void> {
+export const name: Command['name'] = 'ping';
+
+export const execute: Command['execute'] = async (
+  client,
+  message,
+): Promise<void> => {
   await client.api.channels.createMessage(message.channel_id, { content: 'pong' });
-}
+};

@@ -11,6 +11,9 @@ if (!BOT_TOKEN) {
   process.exit(1);
 }
 console.log('[boot] token present');
+console.log(
+  `[boot] api=${API_BASE_URL} rest_v=${API_VERSION} gw_v=${GATEWAY_VERSION} intents=0`,
+);
 
 const rest = new REST({ version: API_VERSION, api: API_BASE_URL }).setToken(BOT_TOKEN);
 
@@ -52,15 +55,76 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
+let shouldStop = false;
+
 process.on('SIGINT', () => {
+  shouldStop = true;
   console.log('Received SIGINT, shutting down.');
   process.exit(0);
 });
 
+process.on('SIGTERM', () => {
+  shouldStop = true;
+  console.log('Received SIGTERM, shutting down.');
+  process.exit(0);
+});
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function connectWithTimeout(timeoutMs = 15_000) {
+  let timeoutId: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`connect timeout after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  try {
+    await Promise.race([gateway.connect(), timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+function formatErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'unknown error';
+  }
+}
+
+async function runGatewayLoop() {
+  let backoffMs = 2_000;
+  const backoffCapMs = 60_000;
+
+  while (!shouldStop) {
+    try {
+      console.log('[gateway] connecting...');
+      await connectWithTimeout();
+      console.log('[gateway] connected');
+      return;
+    } catch (error) {
+      const message = formatErrorMessage(error);
+      console.error(`[gateway] connect failed: ${message}`);
+      if (shouldStop) return;
+
+      const jitterFactor = 1 + (Math.random() * 0.4 - 0.2);
+      const waitMs = Math.max(0, Math.round(backoffMs * jitterFactor));
+      console.log(`[gateway] retrying in ${waitMs}ms`);
+      await sleep(waitMs);
+
+      backoffMs = Math.min(backoffCapMs, Math.round(backoffMs * 1.7));
+    }
+  }
+}
+
 async function main() {
-  console.log('[gateway] connecting...');
-  await gateway.connect();
-  console.log('[gateway] connect() resolved');
+  await runGatewayLoop();
 }
 
 main().catch((error) => {

@@ -6,8 +6,8 @@
 
 ## Local Run + Manual Test
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 Manual test plan:
 - Start the bot with `FLUXER_BOT_TOKEN` set.

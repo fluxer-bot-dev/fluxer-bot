@@ -1,8 +1,14 @@
 import type { Client } from '@discordjs/core';
-import type { GatewayMessageCreateDispatchData } from 'discord-api-types/v10';
 
 export type BotClient = Client;
-export type MessageCreatePayload = GatewayMessageCreateDispatchData;
+// Structural shape to avoid type identity conflicts from multiple discord-api-types copies.
+export type MessageCreatePayload = {
+  channel_id: string;
+  content: string;
+  author?: {
+    bot?: boolean;
+  };
+};
 
 export interface Command {
   name: string;

@@ -1,7 +1,7 @@
 import { Client, GatewayDispatchEvents } from '@discordjs/core';
 import { loadCommands } from './commandLoader.js';
 
-const PREFIX = '!';
+const PREFIX = process.env.COMMAND_PREFIX || '!';
 
 export async function registerHandlers(client: Client): Promise<void> {
   const commands = await loadCommands();

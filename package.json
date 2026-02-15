@@ -10,7 +10,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit",
-    "prepare": "husky"
+    "prepare": "bun ./scripts/prepare-husky.ts"
   },
   "dependencies": {
     "@discordjs/core": "^2.4.0",
@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@types/bun": "^1.3.9",
     "discord-api-types": "^0.37.102",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",

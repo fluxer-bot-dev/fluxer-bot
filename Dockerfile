@@ -7,4 +7,4 @@ RUN bun install ${BUN_INSTALL_FLAGS}
 
 COPY tsconfig.json src ./
 
-CMD ["bun", "src/index.ts"]
+CMD ["bun", "index.ts"]

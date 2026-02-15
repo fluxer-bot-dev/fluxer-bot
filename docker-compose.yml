@@ -1,6 +1,8 @@
 services:
   fluxer-bot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: fluxer-bot
     restart: unless-stopped
     env_file:

@@ -15,6 +15,3 @@ npm-debug.log*
 coverage
 
 .DS_Store
-
-bun.lock
-bun.lockb

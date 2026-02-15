@@ -5,6 +5,7 @@ export type BotClient = Client;
 export type MessageCreatePayload = {
   channel_id: string;
   content: string;
+  guild_id: string; 
   author?: {
     bot?: boolean;
   };
@@ -14,3 +15,4 @@ export interface Command {
   name: string;
   execute(client: BotClient, message: MessageCreatePayload, args: string[]): Promise<void>;
 }
+

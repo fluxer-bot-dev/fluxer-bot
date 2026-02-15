@@ -5,7 +5,8 @@ export type BotClient = Client;
 export type MessageCreatePayload = {
   channel_id: string;
   content: string;
-  guild_id: string; 
+  guild_id?: string;
+  message?: string;
   author?: {
     bot?: boolean;
   };

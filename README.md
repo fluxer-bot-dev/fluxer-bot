@@ -56,7 +56,4 @@ Runs the bot in development mode using Bun with hot reload via the override comp
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
-- Ensure a `.env` file exists in the project root.
-- It must contain `FLUXER_BOT_TOKEN`.
-- `.env` must not be committed.
-- Use `docker compose down` to stop containers.
+Use `docker compose down` to stop containers.

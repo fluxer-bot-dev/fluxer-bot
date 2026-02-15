@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bunx tsc",
-    "start": "bun dist/index.js",
+    "start": "bun src/index.ts",
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit"

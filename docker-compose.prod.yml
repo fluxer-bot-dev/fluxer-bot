@@ -1,0 +1,4 @@
+services:
+  fluxer-bot:
+    env_file:
+      - /opt/fluxer-bot/.env

@@ -1,0 +1,7 @@
+name: fluxer-bot
+compose_files:
+  - docker-compose.yml
+  - docker-compose.prod.yml
+
+build_opts:
+  no_cache: false

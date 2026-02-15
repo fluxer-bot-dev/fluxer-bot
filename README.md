@@ -12,6 +12,60 @@ cp .env.example .env
 # edit .env and set FLUXER_BOT_TOKEN
 ```
 
+## 🐳 Running with Docker
+
+### Development
+Uses `docker-compose.yml` + `docker-compose.dev.yml`, mounts the local source, and runs Bun in watch mode.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
+Detached mode:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+Stop:
+
+```bash
+docker compose down
+```
+
+---
+
+### Production
+Builds the Dockerfile, installs production dependencies, and runs `bun src/index.ts` inside the container.
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+Rebuild + start:
+
+```bash
+docker compose up -d --build
+```
+
+Stop:
+
+```bash
+docker compose down
+```
+
+---
+
+### Environment Variables
+Create a `.env` file based on `.env.example`.
+
+Required:
+- `FLUXER_BOT_TOKEN=`
+
+Optional:
+- `NODE_ENV=development` (defaults to development behavior if not set)
+
 ## Run
 ```bash
 bun install
@@ -23,10 +77,13 @@ bun run dev
 - The file should be ESM/TypeScript and use `.js` extensions for relative imports.
 - Commands are loaded dynamically at startup; no manual registration needed.
 
-## Build + Start
+## Type Checking & Optional Build
+The bot runs TypeScript directly with Bun, so a build step is not required for normal usage.  
+The `build` script exists primarily for CI or artifact generation.
+
 ```bash
+bun run typecheck
 bun run build
-bun run start
 ```
 
 ## Lint + Format

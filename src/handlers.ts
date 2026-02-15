@@ -1,7 +1,9 @@
 import { Client, GatewayDispatchEvents } from '@discordjs/core';
 import { loadCommands } from './commandLoader.js';
 
-const PREFIX = '!';
+const PREFIX = process.env.COMMAND_PREFIX || '!';
+
+
 /**
  * This function registers event handlers for the bot client.
  * It listens for the "Ready" event to log when the bot is ready, and for the "MessageCreate" event to handle incoming messages.
@@ -11,6 +13,7 @@ const PREFIX = '!';
  * This function is essential for setting up the bot's interaction with users and enabling it to respond to commands in the chat.
  * @param client 
  */
+
 export async function registerHandlers(client: Client): Promise<void> {
   const commands = await loadCommands();
 

@@ -1,0 +1,7 @@
+services:
+  fluxer-bot:
+    build: .
+    container_name: fluxer-bot
+    restart: unless-stopped
+    env_file:
+      - .env

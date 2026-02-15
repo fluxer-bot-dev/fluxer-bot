@@ -1,6 +1,8 @@
 import { Client, GatewayDispatchEvents } from '@discordjs/core';
 import { loadCommands } from './commandLoader.js';
 
+const PREFIX = '!';
+
 export async function registerHandlers(client: Client): Promise<void> {
   const commands = await loadCommands();
 
@@ -12,15 +14,12 @@ export async function registerHandlers(client: Client): Promise<void> {
 
   client.on(GatewayDispatchEvents.MessageCreate, async ({ data: message }) => {
     if (message.author?.bot) return;
-    if (message.content !== 'ping') return;
+    if (!message.content.startsWith(PREFIX)) return;
 
-    const [commandName, ...args] = message.content.split(' ');
+    const [commandName, ...args] = message.content.slice(PREFIX.length).split(' ');
     const command = commands.get(commandName);
 
-    if (!command) {
-      console.warn(`Unknown command: ${commandName}`);
-      return;
-    }
+    if (!command) return;
 
     await command.execute(client, message, args);
   });

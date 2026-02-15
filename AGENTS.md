@@ -4,6 +4,37 @@
 - Intent: a minimal Fluxer bot that responds to `ping` with `pong` using the low-level discord.js core packages.
 - Non-goals: frameworks, advanced command routing, databases, hosting setup, or complex observability.
 
+## Project Invariants
+Architecture & Philosophy
+- Minimal architecture only.
+- No frameworks.
+- Message-based commands only (no slash commands).
+- Strict TypeScript must remain enabled.
+- ESM only; `.js` relative imports required.
+- No `any` in runtime code.
+
+Bun & Tooling
+- Bun is the package manager and runtime.
+- A lockfile must exist.
+- `bun install --frozen-lockfile` must be used in Docker builds.
+- No dependency version changes unless strictly required.
+
+Docker
+- Dockerfile must remain multi-stage.
+- Must use `oven/bun` base images.
+- Production image must not include devDependencies.
+- `.env` must never be copied into the image.
+- No secrets in image layers.
+- `docker-compose.yml` is production base.
+- `docker-compose.dev.yml` is override-only.
+- No additional services without explicit architectural justification.
+
+Constraints
+- Do not introduce logging frameworks.
+- Do not introduce ORMs.
+- Do not introduce routing abstractions.
+- Keep runtime behavior identical unless explicitly instructed.
+
 ## Local Run + Manual Test
 ```bash
 bun install

@@ -1,8 +1,7 @@
-import { Client, GatewayDispatchEvents } from '@discordjs/core';
-import { loadCommands } from './commandLoader.js';
+import { type Client, GatewayDispatchEvents } from "@discordjs/core";
+import { loadCommands } from "./commandLoader.js";
 
-const PREFIX = process.env.COMMAND_PREFIX || '!';
-
+const PREFIX = process.env.COMMAND_PREFIX || "!";
 
 /**
  * This function registers event handlers for the bot client.
@@ -11,7 +10,7 @@ const PREFIX = process.env.COMMAND_PREFIX || '!';
  * The commands are loaded using the loadCommands function, which retrieves all available commands and their execution logic.
  * The command execution is done by calling the execute function of the matched command, passing in the client, message, and any arguments extracted from the message content.
  * This function is essential for setting up the bot's interaction with users and enabling it to respond to commands in the chat.
- * @param client 
+ * @param client
  */
 
 export async function registerHandlers(client: Client): Promise<void> {
@@ -27,7 +26,9 @@ export async function registerHandlers(client: Client): Promise<void> {
     if (message.author?.bot) return;
     if (!message.content.startsWith(PREFIX)) return;
 
-    const [commandName, ...args] = message.content.slice(PREFIX.length).split(/\s+/);
+    const [commandName, ...args] = message.content
+      .slice(PREFIX.length)
+      .split(/\s+/);
     const command = commands.get(commandName);
 
     if (!command) {

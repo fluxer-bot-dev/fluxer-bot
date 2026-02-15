@@ -1,4 +1,4 @@
-import type { Client } from '@discordjs/core';
+import type { Client } from "@discordjs/core";
 
 export type BotClient = Client;
 // Structural shape to avoid type identity conflicts from multiple discord-api-types copies.
@@ -14,6 +14,9 @@ export type MessageCreatePayload = {
 
 export interface Command {
   name: string;
-  execute(client: BotClient, message: MessageCreatePayload, args: string[]): Promise<void>;
+  execute(
+    client: BotClient,
+    message: MessageCreatePayload,
+    args: string[],
+  ): Promise<void>;
 }
-

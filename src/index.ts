@@ -1,9 +1,9 @@
-import { BOT_TOKEN } from './config.js';
-import { assertTokenPresent } from './bootstrap.js';
-import { createFluxerClient } from './fluxerClient.js';
-import { runGatewayLoop } from './gatewayLoop.js';
-import { registerHandlers } from './handlers.js';
-import { registerProcessHandlers } from './process.js';
+import { assertTokenPresent } from "./bootstrap.js";
+import { BOT_TOKEN } from "./config.js";
+import { createFluxerClient } from "./fluxerClient.js";
+import { runGatewayLoop } from "./gatewayLoop.js";
+import { registerHandlers } from "./handlers.js";
+import { registerProcessHandlers } from "./process.js";
 
 async function main() {
   const token = assertTokenPresent(BOT_TOKEN);
@@ -15,6 +15,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('Failed to start bot:', error);
+  console.error("Failed to start bot:", error);
   process.exit(1);
 });

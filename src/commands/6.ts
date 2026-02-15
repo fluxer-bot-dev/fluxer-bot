@@ -1,5 +1,9 @@
-import type { BotClient, MessageCreatePayload, Command } from '../types/command.js';
-export const name: Command['name'] = '6';
+import type {
+  BotClient,
+  Command,
+  MessageCreatePayload,
+} from "../types/command.js";
+export const name: Command["name"] = "6";
 
 /**
  * This command is a simple test command that responds with "7" when invoked.
@@ -20,5 +24,5 @@ export async function execute(
   message: MessageCreatePayload,
   _args: string[],
 ): Promise<void> {
-  await client.api.channels.createMessage(message.channel_id, { content: '7' });
+  await client.api.channels.createMessage(message.channel_id, { content: "7" });
 }

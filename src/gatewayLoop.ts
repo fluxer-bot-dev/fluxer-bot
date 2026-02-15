@@ -1,6 +1,6 @@
-import { WebSocketManager } from '@discordjs/ws';
+import type { WebSocketManager } from "@discordjs/ws";
 
-import { formatErrorMessage } from './process.js';
+import { formatErrorMessage } from "./process.js";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -33,9 +33,9 @@ export async function runGatewayLoop(
 
   while (!shouldStop()) {
     try {
-      console.log('[gateway] connecting...');
+      console.log("[gateway] connecting...");
       await connectWithTimeout(gateway);
-      console.log('[gateway] connected');
+      console.log("[gateway] connected");
       return;
     } catch (error) {
       const message = formatErrorMessage(error);

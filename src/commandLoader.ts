@@ -1,18 +1,18 @@
-import { readdir } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { readdir } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-import type { Command } from './types/command.js';
+import type { Command } from "./types/command.js";
 
 function isCommandFile(fileName: string): boolean {
-  if (fileName.endsWith('.d.ts')) return false;
-  return fileName.endsWith('.ts') || fileName.endsWith('.js');
+  if (fileName.endsWith(".d.ts")) return false;
+  return fileName.endsWith(".ts") || fileName.endsWith(".js");
 }
 
 export async function loadCommands(): Promise<Map<string, Command>> {
   const commandsDir = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
-    'commands',
+    "commands",
   );
   const entries = await readdir(commandsDir, { withFileTypes: true });
   const commands = new Map<string, Command>();
@@ -25,7 +25,10 @@ export async function loadCommands(): Promise<Map<string, Command>> {
         // Dynamic imports are shape-checked at runtime, so we start with a partial.
         const module = (await import(fileUrl)) as Partial<Command>;
 
-        if (typeof module.name !== 'string' || typeof module.execute !== 'function') {
+        if (
+          typeof module.name !== "string" ||
+          typeof module.execute !== "function"
+        ) {
           throw new Error(`Invalid command module: ${entry.name}`);
         }
 

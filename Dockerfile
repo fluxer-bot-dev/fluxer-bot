@@ -3,7 +3,7 @@ WORKDIR /app
 
 ENV CI=true
 
-COPY package.json bun.lockb* bun.lock* ./
+COPY package.json bun.lockb* bun.lock* scripts ./ 
 ARG BUN_INSTALL_FLAGS="--frozen-lockfile --production"
 RUN bun install ${BUN_INSTALL_FLAGS}
 

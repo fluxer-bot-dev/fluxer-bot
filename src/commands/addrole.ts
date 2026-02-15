@@ -7,34 +7,48 @@ export async function execute(
   message: MessageCreatePayload,
   args: string[],
 ): Promise<void> {
-  // Expect: !addrole user#0000 <roleId>
-  const userTag = args[0];
-  const roleId = args[1];
+   console.log('raw args:', args);
+  // Expect: !addrole @user <roleName>
+  const mention = args[0];
+  const roleName = args.slice(1).join(' ');
 
-  if (!userTag?.includes('#') || !roleId) {
+  // Extract user ID from mention format <@userId> or <@!userId>
+  const mentionMatch = mention?.match(/^<@!?(\d+)>$/);
+
+  if (!mentionMatch || !roleName) {
     await client.api.channels.createMessage(message.channel_id, {
-      content: 'Usage: !addrole user#0000 <roleId>',
+      content: 'Usage: !addrole @user <roleName>',
     });
     return;
   }
 
-  const [username, discriminator] = userTag.split('#');
+  const userId = mentionMatch[1];
 
-  const members = await client.api.guilds.getMembers(message.guild_id, { limit: 1000 });
-  const member = members.find(
-    (m) => m.user?.username === username && m.user?.discriminator === discriminator,
+  // Find the role by name (case-insensitive)
+  const roles = await client.api.guilds.getRoles(message.guild_id);
+  const role = roles.find(
+    (r) => r.name.toLowerCase() === roleName.toLowerCase(),
   );
 
-  if (!member) {
+  if (!role) {
     await client.api.channels.createMessage(message.channel_id, {
-      content: `Could not find user ${userTag}`,
+      content: `Could not find role "${roleName}"`,
     });
     return;
   }
 
-  await client.api.guilds.addRoleToMember(message.guild_id, member.user!.id, roleId);
+  try {
+    await client.api.guilds.addRoleToMember(message.guild_id, userId, role.id);
 
-  await client.api.channels.createMessage(message.channel_id, {
-    content: `Role added to ${userTag}!`,
-  });
+    await client.api.channels.createMessage(message.channel_id, {
+      content: `Added role "${role.name}" to <@${userId}>!`,
+    });
+  } catch (error: unknown) {
+    const msg =
+      error instanceof Error ? error.message : 'Unknown error';
+    await client.api.channels.createMessage(message.channel_id, {
+      content: `WIP`,
+    });
+  }
 }
+//Failed to add role: ${msg} when fluxers fixes this issue it will be added back in the error message.

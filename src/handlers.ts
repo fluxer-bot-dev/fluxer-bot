@@ -12,15 +12,16 @@ export async function registerHandlers(client: Client): Promise<void> {
     console.log(`Ready as ${tag}`);
   });
 
-  client.on(GatewayDispatchEvents.MessageCreate, async ({ data: message }) => {
+client.on(GatewayDispatchEvents.MessageCreate, async ({ data: message }) => {
     if (message.author?.bot) return;
     if (!message.content.startsWith(PREFIX)) return;
 
-    const [commandName, ...args] = message.content.slice(PREFIX.length).split(' ');
-    const command = commands.get(commandName);
+    const [commandName, ...args] = message.content.slice(PREFIX.length).split(/\s+/);
+    console.log('command:', commandName, 'args:', args);  // <-- add this
 
+    const command = commands.get(commandName);
     if (!command) return;
 
     await command.execute(client, message, args);
-  });
+});
 }

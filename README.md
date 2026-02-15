@@ -12,6 +12,60 @@ cp .env.example .env
 # edit .env and set FLUXER_BOT_TOKEN
 ```
 
+## 🐳 Running with Docker
+
+### Development
+Uses `docker-compose.yml` + `docker-compose.dev.yml`, mounts the local source, and runs Bun in watch mode.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
+Detached mode:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+Stop:
+
+```bash
+docker compose down
+```
+
+---
+
+### Production
+Builds the Dockerfile, installs production dependencies, and runs `bun src/index.ts` inside the container.
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+Rebuild + start:
+
+```bash
+docker compose up -d --build
+```
+
+Stop:
+
+```bash
+docker compose down
+```
+
+---
+
+### Environment Variables
+Create a `.env` file based on `.env.example`.
+
+Required:
+- `FLUXER_BOT_TOKEN=`
+
+Optional:
+- `NODE_ENV=development` (defaults to development behavior if not set)
+
 ## Run
 ```bash
 bun install
@@ -23,10 +77,13 @@ bun run dev
 - The file should be ESM/TypeScript and use `.js` extensions for relative imports.
 - Commands are loaded dynamically at startup; no manual registration needed.
 
-## Build + Start
+## Type Checking & Optional Build
+The bot runs TypeScript directly with Bun, so a build step is not required for normal usage.  
+The `build` script exists primarily for CI or artifact generation.
+
 ```bash
+bun run typecheck
 bun run build
-bun run start
 ```
 
 ## Lint + Format
@@ -39,21 +96,3 @@ bun run format
 - `FLUXER_BOT_TOKEN` is set and correct.
 - The bot is authorized in the target community.
 - The bot has permission to read and send messages in the channel.
-
-## Docker (Compose)
-
-### Production
-Builds the image and runs the bot in detached production mode.
-
-```bash
-docker compose up --build -d
-```
-
-### Development
-Runs the bot in development mode using Bun with hot reload via the override compose file.
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
-```
-
-Use `docker compose down` to stop containers.

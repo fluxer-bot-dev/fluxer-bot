@@ -26,14 +26,18 @@ export async function registerHandlers(client: Client): Promise<void> {
     if (message.author?.bot) return;
     if (!message.content.startsWith(PREFIX)) return;
 
-    const [commandName, ...args] = message.content
-      .slice(PREFIX.length)
-      .split(/\s+/);
-    const command = commands.get(commandName);
+    const body = message.content.slice(PREFIX.length).trim();
 
+    // Ignore messages that are just mentions, as they are likely not intended as commands.
+    // Unless the command is specifically designed to handle mentions, in which case it should be invoked with the appropriate command name.
+    if (!body || /^<@!?\d+>/.test(body)) return;
+
+    const [commandName, ...args] = body.split(/\s+/);
+    const command = commands.get(commandName);
+    // TODO: Do a help command that lists all available commands and their descriptions.
     if (!command) {
       await client.api.channels.createMessage(message.channel_id, {
-        content: `Unknown command: ${commandName}`,
+        content: `Unknown command: ${commandName}, Use \`${PREFIX}help\` to see available commands.`,
       });
       return;
     }

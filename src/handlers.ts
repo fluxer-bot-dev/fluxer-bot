@@ -15,10 +15,12 @@ const PREFIX = process.env.COMMAND_PREFIX || "!";
 
 export async function registerHandlers(client: Client): Promise<void> {
   const commands = await loadCommands();
+  let botId: string | undefined;
 
   client.once(GatewayDispatchEvents.Ready, ({ data }) => {
-    const user = data.user;
-    const tag = `${user.username}#${user.discriminator}`;
+    const { username, id: userid, discriminator } = data.user; // Destructure the username, discriminator, and id from the user data
+    const tag = `${username}#${discriminator}`;
+    botId = userid;
     console.log(`Ready as ${tag}`);
   });
 
@@ -27,10 +29,11 @@ export async function registerHandlers(client: Client): Promise<void> {
     if (!message.content.startsWith(PREFIX)) return;
 
     const body = message.content.slice(PREFIX.length).trim();
+    const mentionRegex = botId ? new RegExp(`^<@!?${botId}>`) : /^<@!?\d+>/;
 
     // Ignore messages that are just mentions, as they are likely not intended as commands.
     // Unless the command is specifically designed to handle mentions, in which case it should be invoked with the appropriate command name.
-    if (!body || /^<@!?\d+>/.test(body)) return;
+    if (!body || mentionRegex.test(body)) return;
 
     const [commandName, ...args] = body.split(/\s+/);
     const command = commands.get(commandName);

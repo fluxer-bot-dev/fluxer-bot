@@ -41,6 +41,7 @@ export async function registerHandlers(client: Client): Promise<void> {
     if (!command) {
       await client.api.channels.createMessage(message.channel_id, {
         content: `Unknown command: ${commandName}, Use \`${PREFIX}help\` to see available commands.`,
+        allowed_mentions: { parse: [] }, //this prevents the bot from pinging anyone in the error message.
       });
       return;
     }

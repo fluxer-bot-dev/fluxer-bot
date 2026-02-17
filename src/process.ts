@@ -8,7 +8,9 @@ export function formatErrorMessage(error: unknown): string {
   }
 }
 
-export function registerProcessHandlers(): {
+export function registerProcessHandlers(
+  onShutdown?: () => Promise<void> | void,
+): {
   shouldStop: () => boolean;
   requestStop: () => void;
 } {
@@ -18,25 +20,36 @@ export function registerProcessHandlers(): {
     shouldStop = true;
   };
 
+  const shutdown = async (exitCode: number, reason: string) => {
+    requestStop();
+    console.log(reason);
+
+    if (onShutdown) {
+      try {
+        await onShutdown();
+      } catch (error) {
+        console.error("Shutdown error:", error);
+      }
+    }
+
+    process.exit(exitCode);
+  };
+
   process.on("unhandledRejection", (reason) => {
     console.error("Unhandled promise rejection:", reason);
   });
 
   process.on("uncaughtException", (error) => {
     console.error("Uncaught exception:", error);
-    process.exit(1);
+    void shutdown(1, "Shutting down after uncaught exception.");
   });
 
   process.on("SIGINT", () => {
-    requestStop();
-    console.log("Received SIGINT, shutting down.");
-    process.exit(0);
+    void shutdown(0, "Received SIGINT, shutting down.");
   });
 
   process.on("SIGTERM", () => {
-    requestStop();
-    console.log("Received SIGTERM, shutting down.");
-    process.exit(0);
+    void shutdown(0, "Received SIGTERM, shutting down.");
   });
 
   return {

@@ -1,6 +1,12 @@
 # fluxer-bot
 
-Fluxer is a Discord-compatible community platform. This repo contains a minimal bot that connects to Fluxer's REST + Gateway APIs and replies with `pong` when a user sends `!ping`.
+Fluxer is a Discord-compatible community platform. This repo contains a small bot that connects to Fluxer's REST + Gateway APIs and replies with `pong` when a user sends `!ping`.
+
+## Architecture
+
+- Runtime: Bun + TypeScript (ESM). Commands live in `src/commands/` and are loaded dynamically.
+- Data layer (intended): PostgreSQL as the primary database with Prisma as the ORM. Keep DB access in a dedicated layer separate from command logic.
+- Docker: local development and production are Docker-based (Compose + Dockerfile).
 
 ## Setup
 
@@ -20,12 +26,15 @@ Create a `.env` file based on `.env.example`.
 | Variable | Required | Description |
 |---|---|---|
 | `FLUXER_BOT_TOKEN` | Yes | Your bot token from the Fluxer dashboard |
+| `DATABASE_URL` | Yes | PostgreSQL connection string used by Prisma and the bot |
 | `NODE_ENV` | No | Defaults to development behavior if not set |
 
 ## Running Locally
 
 ```bash
 bun install
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
+bun run db:migrate
 bun run dev
 ```
 
@@ -33,7 +42,7 @@ bun run dev
 
 ### Development
 
-Uses `docker-compose.yml` + `docker-compose.dev.yml`, mounts the local source, and runs Bun in watch mode.
+Uses `docker-compose.yml` + `docker-compose.dev.yml`. Set `DATABASE_URL` to use host `postgres` when running the bot in Docker.
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
@@ -47,7 +56,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 ### Production
 
-Builds the Dockerfile, installs production dependencies, and runs `bun src/index.ts` inside the container.
+Builds the Dockerfile, installs production dependencies, runs migrations, and starts `bun src/index.ts` inside the container.
 
 ```bash
 docker compose up -d --build
@@ -62,6 +71,15 @@ docker compose down
 ## Adding Commands
 
 Create a new file under `src/commands/` that exports `name` and `execute(client, message, args)`. The file should be ESM/TypeScript and use `.js` extensions for relative imports. Commands are loaded dynamically at startup — no manual registration needed.
+
+## Database
+
+```bash
+bun run db:migrate  # dev migrations
+bun run db:deploy   # production deploy
+bun run db:generate # regenerate Prisma client
+bun run db:reset    # DEV ONLY: drops and recreates the database
+```
 
 ## Type Checking & Build
 

@@ -22,6 +22,15 @@ export async function execute(
   message: MessageCreatePayload,
   args: string[],
 ): Promise<void> {
+  const guildId = message.guild_id;
+
+  if (!guildId) {
+    await client.api.channels.createMessage(message.channel_id, {
+      content: "This command can only be used in a server.",
+    });
+    return;
+  }
+
   const mention = args[0];
   const roleName = args.slice(1).join(" ");
 
@@ -36,7 +45,7 @@ export async function execute(
 
   const userId = mentionMatch[1];
 
-  const roles = await client.api.guilds.getRoles(message.guild_id);
+  const roles = await client.api.guilds.getRoles(guildId);
   const role = roles.find(
     (r) => r.name.toLowerCase() === roleName.toLowerCase(),
   );
@@ -49,7 +58,7 @@ export async function execute(
   }
 
   try {
-    await client.api.guilds.addRoleToMember(message.guild_id, userId, role.id);
+    await client.api.guilds.addRoleToMember(guildId, userId, role.id);
 
     await client.api.channels.createMessage(message.channel_id, {
       content: `Added role "${role.name}" to <@${userId}>!`,

@@ -10,7 +10,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit",
-    "prepare": "bun ./scripts/prepare-husky.ts"
+    "prepare": "bun -e \"if (process.env.CI||process.env.NODE_ENV==='production') process.exit(0); const p=Bun.spawn(['husky'],{stdout:'inherit',stderr:'inherit'}); await p.exited; process.exit(p.exitCode??1);\""
   },
   "dependencies": {
     "@discordjs/core": "^2.4.0",

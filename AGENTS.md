@@ -18,6 +18,7 @@ Bun & Tooling
 - A lockfile must exist.
 - `bun install --frozen-lockfile` must be used in Docker builds.
 - No dependency version changes unless strictly required.
+- Husky runs via `package.json` `prepare` in dev; Docker/CI must set `CI=true` to skip it.
 
 Docker
 - Dockerfile must remain multi-stage.

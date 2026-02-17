@@ -7,6 +7,9 @@ COPY package.json bun.lockb* bun.lock* ./
 ARG BUN_INSTALL_FLAGS="--frozen-lockfile --production"
 RUN bun install ${BUN_INSTALL_FLAGS}
 
+COPY prisma ./prisma
+RUN bunx prisma generate
+
 COPY tsconfig.json ./tsconfig.json
 COPY src ./src
 

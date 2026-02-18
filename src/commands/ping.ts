@@ -18,4 +18,3 @@ export const execute: Command["execute"] = async (
     content: "pong",
   });
 };
-//make a description for this command and add it to the help command.

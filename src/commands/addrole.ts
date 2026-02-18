@@ -65,4 +65,3 @@ export async function execute(
 }
 // Note: This is a work in progress command and may not function correctly until Fluxer fixes the underlying issue.
 // It is a reported issue https://github.com/fluxerapp/fluxer/issues/154
-//make a description for this command and add it to the help command.

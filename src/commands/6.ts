@@ -29,4 +29,3 @@ export async function execute(
 ): Promise<void> {
   await client.api.channels.createMessage(message.channel_id, { content: "7" });
 }
-//make a description for this command and add it to the help command.

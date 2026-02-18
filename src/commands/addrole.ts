@@ -5,6 +5,8 @@ import type {
 } from "../types/command.js";
 
 export const name: Command["name"] = "addrole";
+export const description: Command["description"] =
+  "Adds a role to a user in the guild. Usage: !addrole @user <roleName>";
 /**
  * This command allows you to add a role to a user in the guild.
  * The command expects two arguments: the user's tag (e.g., user#0000) and the role ID.
@@ -63,3 +65,4 @@ export async function execute(
 }
 // Note: This is a work in progress command and may not function correctly until Fluxer fixes the underlying issue.
 // It is a reported issue https://github.com/fluxerapp/fluxer/issues/154
+//make a description for this command and add it to the help command.

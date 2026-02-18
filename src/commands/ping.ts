@@ -1,6 +1,7 @@
 import type { Command } from "../types/command.js";
 
 export const name: Command["name"] = "ping";
+export const description: Command["description"] = "Responds with 'pong'.";
 /**
  * This command responds with "pong" when invoked.
  * It serves as a simple test command to verify that the command handling system is working correctly.
@@ -17,3 +18,4 @@ export const execute: Command["execute"] = async (
     content: "pong",
   });
 };
+//make a description for this command and add it to the help command.

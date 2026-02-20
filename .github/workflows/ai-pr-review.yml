@@ -1,0 +1,292 @@
+name: AI PR Review (inline)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: ai-pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post inline PR review comments
+        uses: actions/github-script@v7
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-5.2
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const reviewPrefix = "🤖 AI PR Review:";
+            const reviewMarker = "<!-- ai-pr-review -->";
+
+            // --- helpers ------------------------------------------------------
+            function parseUnifiedPatchToCandidates(patch) {
+              // Returns: { candidates: [{line, text}], totalAdded }
+              // We only propose added lines (+) with their NEW-file line number.
+              const lines = patch.split("\n");
+              let newLine = null;
+              const candidates = [];
+              let totalAdded = 0;
+
+              const hunkRe = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/;
+
+              for (const raw of lines) {
+                const m = raw.match(hunkRe);
+                if (m) {
+                  newLine = parseInt(m[1], 10);
+                  continue;
+                }
+                if (newLine === null) continue;
+
+                // Skip file headers inside patch
+                if (raw.startsWith("+++ ") || raw.startsWith("--- ")) continue;
+
+                if (raw.startsWith("+")) {
+                  // Added line in new file
+                  totalAdded += 1;
+                  candidates.push({ line: newLine, text: raw.slice(1) });
+                  newLine += 1;
+                } else if (raw.startsWith("-")) {
+                  // Removed line: does not advance newLine
+                } else {
+                  // Context line: advances newLine
+                  newLine += 1;
+                }
+              }
+
+              return { candidates, totalAdded };
+            }
+
+            function buildModelInput(files) {
+              // Keep payload compact: per file, list candidate lines (added lines)
+              // plus some light trimming.
+              const MAX_FILES = 25;
+              const MAX_CANDIDATES_PER_FILE = 120;
+              const MAX_LINE_LEN = 240;
+
+              const blocks = [];
+              for (const f of files.slice(0, MAX_FILES)) {
+                if (!f.patch) continue;
+
+                // Optional: ignore lockfiles / generated files to reduce noise
+                if (
+                  f.filename === "bun.lockb" ||
+                  f.filename === "package-lock.json" ||
+                  f.filename === "pnpm-lock.yaml" ||
+                  f.filename === "yarn.lock"
+                ) continue;
+
+                const { candidates, totalAdded } = parseUnifiedPatchToCandidates(f.patch);
+                if (candidates.length === 0) continue;
+
+                const trimmed = candidates.slice(0, MAX_CANDIDATES_PER_FILE).map(c => ({
+                  line: c.line,
+                  text: c.text.length > MAX_LINE_LEN ? c.text.slice(0, MAX_LINE_LEN) + "…" : c.text
+                }));
+
+                blocks.push({
+                  path: f.filename,
+                  totalAdded,
+                  candidates: trimmed
+                });
+              }
+              return blocks;
+            }
+
+            async function callOpenAI(prompt) {
+              const res = await fetch("https://api.openai.com/v1/responses", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+                  input: prompt,
+                  max_output_tokens: 1200,
+                  temperature: 0,
+                  text: {
+                    format: {
+                      type: "json_schema",
+                      name: "pr_inline_review",
+                      strict: true,
+                      schema: {
+                        type: "object",
+                        additionalProperties: false,
+                        properties: {
+                          comments: {
+                            type: "array",
+                            maxItems: 12,
+                            items: {
+                              type: "object",
+                              additionalProperties: false,
+                              properties: {
+                                path: { type: "string" },
+                                line: { type: "integer" },
+                                side: { type: "string", enum: ["RIGHT"] },
+                                body: { type: "string" }
+                              },
+                              required: ["path", "line", "side", "body"]
+                            }
+                          }
+                        },
+                        required: ["comments"]
+                      }
+                    }
+                  }
+                })
+              });
+
+              if (!res.ok) {
+                const t = await res.text();
+                throw new Error(`OpenAI error ${res.status}: ${t}`);
+              }
+              return await res.json();
+            }
+
+            function extractOutputText(oai) {
+              let text = "";
+              for (const item of (oai.output || [])) {
+                for (const c of (item.content || [])) {
+                  if (c.type === "output_text") text += c.text;
+                }
+              }
+              return (text || "").trim();
+            }
+
+            function stripFencesToJson(text) {
+              // Defensive: schema should prevent fences, but keep this to be safe.
+              let t = (text || "").trim();
+              t = t.replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "").trim();
+
+              const firstBrace = t.indexOf("{");
+              const lastBrace = t.lastIndexOf("}");
+              if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                t = t.slice(firstBrace, lastBrace + 1);
+              }
+              return t.trim();
+            }
+
+            // --- get PR files --------------------------------------------------
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              per_page: 100
+            });
+
+            const reviewable = files.filter(f => typeof f.patch === "string" && f.patch.length > 0);
+            if (reviewable.length === 0) {
+              core.notice("No patches available (large/binary diffs often omit patch).");
+              return;
+            }
+
+            // --- replace prior AI inline comments -----------------------------
+            const priorReviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              per_page: 100
+            });
+
+            const reviewIds = new Set(
+              priorReviews
+                .filter(r => (
+                  r.user?.login === "github-actions[bot]" &&
+                  typeof r.body === "string" &&
+                  r.body.includes(reviewMarker)
+                ))
+                .map(r => r.id)
+            );
+
+            if (reviewIds.size > 0) {
+              const priorComments = await github.paginate(github.rest.pulls.listReviewComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                per_page: 100
+              });
+
+              const deletions = priorComments.filter(c => reviewIds.has(c.pull_request_review_id));
+              for (const c of deletions) {
+                await github.rest.pulls.deleteReviewComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: c.id
+                });
+              }
+            }
+
+            // --- build compact candidate set ----------------------------------
+            const blocks = buildModelInput(reviewable);
+            if (blocks.length === 0) {
+              core.notice("No candidate lines found.");
+              return;
+            }
+
+            // --- prompt --------------------------------------------------------
+            const prompt = `
+            You are a senior TypeScript reviewer for a discord.js-style bot (Fluxer).
+            You will receive a JSON array of files. Each file contains a list of *added* lines with their NEW-file line numbers.
+
+            Your job: propose up to 12 inline PR review comments targeting these candidate lines.
+
+            Rules:
+            - You may ONLY use (path, line) pairs that exist in the provided candidates.
+            - Prefer high-impact issues: correctness, edge cases, security, reliability, DB/prisma usage, command handling, caching, and env/config safety.
+            - Avoid nitpicks.
+            - Keep each body concise and actionable (what + why + (optional) suggested fix).
+
+            Candidates JSON:
+            ${JSON.stringify(blocks)}
+            `.trim();
+
+            const oai = await callOpenAI(prompt);
+            let text = extractOutputText(oai);
+            text = stripFencesToJson(text);
+
+            let parsed;
+            try {
+              parsed = JSON.parse(text);
+            } catch {
+              core.warning("Model did not return valid JSON; posting fallback summary.");
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `### 🤖 AI PR Review\n\nI couldn't parse structured inline comments this run.\n\n\`\`\`\n${text.slice(0, 6000)}\n\`\`\``
+              });
+              return;
+            }
+
+            const comments = Array.isArray(parsed.comments) ? parsed.comments.slice(0, 12) : [];
+            if (comments.length === 0) {
+              core.notice("No inline comments proposed.");
+              return;
+            }
+
+            // --- submit a single review with inline comments -------------------
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              event: "COMMENT",
+              body: `### 🤖 AI PR Review\n\nInline comments generated automatically.\n\n${reviewMarker}`,
+              comments: comments.map(c => ({
+                path: c.path,
+                line: c.line,
+                side: "RIGHT",
+                body: `${reviewPrefix} ${c.body}`
+              }))
+            });
+
+            core.notice(`Posted ${comments.length} inline review comments.`);

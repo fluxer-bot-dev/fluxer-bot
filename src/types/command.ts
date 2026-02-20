@@ -11,6 +11,9 @@ export type MessageCreatePayload = {
     bot?: boolean;
     id?: string;
   };
+  member?: {
+    roles?: string[];
+  };
 };
 
 export interface Command {

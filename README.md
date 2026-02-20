@@ -28,6 +28,8 @@ Create a `.env` file based on `.env.example`.
 | `FLUXER_BOT_TOKEN` | Yes | Your bot token from the Fluxer dashboard |
 | `DATABASE_URL` | Yes | PostgreSQL connection string used by Prisma and the bot |
 | `NODE_ENV` | No | Defaults to development behavior if not set |
+| `COMMAND_PREFIX` | No | Default command prefix when a guild override is not set |
+| `PREFIX_CACHE_TTL_SECONDS` | No | Cache TTL (seconds) for per-guild prefixes (default 300) |
 
 ## Running Locally
 
@@ -71,6 +73,13 @@ docker compose down
 ## Adding Commands
 
 Create a new file under `src/commands/` that exports `name` and `execute(client, message, args)`. The file should be ESM/TypeScript and use `.js` extensions for relative imports. Commands are loaded dynamically at startup — no manual registration needed.
+
+## Prefix Commands
+
+- Use `setprefix <prefix>` (admin only) to store a per-guild prefix.
+- Use `resetprefix` (admin only) to return to the default prefix.
+- Use `getprefix` to view the effective prefix.
+- You can also mention the bot as a prefix, e.g. `@Bot getprefix`.
 
 ## Database
 

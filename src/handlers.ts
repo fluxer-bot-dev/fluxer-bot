@@ -1,7 +1,9 @@
 import { type Client, GatewayDispatchEvents } from "@discordjs/core";
 import { loadCommands } from "./commandLoader.js";
+import { recordCommandInvocation } from "./data/commandInvocations.js";
+import { getGuildPrefix } from "./data/guildSettings.js";
 
-const PREFIX = process.env.COMMAND_PREFIX || "!";
+const DEFAULT_PREFIX = process.env.COMMAND_PREFIX || "!";
 
 /**
  * This function registers event handlers for the bot client.
@@ -26,9 +28,21 @@ export async function registerHandlers(client: Client): Promise<void> {
 
   client.on(GatewayDispatchEvents.MessageCreate, async ({ data: message }) => {
     if (message.author?.bot) return;
-    if (!message.content.startsWith(PREFIX)) return;
+    const guildId = message.guild_id;
+    const guildPrefix = guildId ? await getGuildPrefix(guildId) : null;
+    const prefix = guildPrefix ?? DEFAULT_PREFIX;
 
-    const body = message.content.slice(PREFIX.length).trim();
+    const mentionPrefix = botId ? new RegExp(`^<@!?${botId}>\s*`) : null;
+    const isMentionPrefix = mentionPrefix
+      ? mentionPrefix.test(message.content)
+      : false;
+
+    const usesTextPrefix = message.content.startsWith(prefix);
+    if (!usesTextPrefix && !isMentionPrefix) return;
+
+    const body = usesTextPrefix
+      ? message.content.slice(prefix.length).trim()
+      : message.content.replace(mentionPrefix ?? /^<@!?\d+>\s*/, "").trim();
     const mentionRegex = botId ? new RegExp(`^<@!?${botId}>`) : /^<@!?\d+>/;
 
     // Ignore messages that are just mentions, as they are likely not intended as commands.
@@ -40,11 +54,18 @@ export async function registerHandlers(client: Client): Promise<void> {
     // TODO: Do a help command that lists all available commands and their descriptions.
     if (!command) {
       await client.api.channels.createMessage(message.channel_id, {
-        content: `Unknown command: ${commandName}, Use \`${PREFIX}help\` to see available commands.`,
+        content: `Unknown command: ${commandName}, Use \`${prefix}help\` to see available commands.`,
         allowed_mentions: { parse: [] }, //this prevents the bot from pinging anyone in the error message.
       });
       return;
     }
+
+    await recordCommandInvocation({
+      command: commandName,
+      guildId: message.guild_id,
+      channelId: message.channel_id,
+      userId: message.author?.id,
+    });
 
     await command.execute(client, message, args);
   });

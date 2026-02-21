@@ -1,6 +1,16 @@
 import { PrismaClient } from "@prisma/client";
 
-export const prisma = new PrismaClient();
+type PrismaGlobal = typeof globalThis & {
+  prisma?: PrismaClient;
+};
+
+const prismaGlobal = globalThis as PrismaGlobal;
+
+export const prisma = prismaGlobal.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+  prismaGlobal.prisma = prisma;
+}
 
 export async function connectDb(): Promise<void> {
   if (!process.env.DATABASE_URL) {

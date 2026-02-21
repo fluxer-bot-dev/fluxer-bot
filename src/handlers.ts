@@ -19,11 +19,18 @@ const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
 export async function registerHandlers(client: Client): Promise<void> {
   const commands = await loadCommands();
   let botId: string | undefined;
+  let mentionPrefixRegex: RegExp | null = null;
+  let mentionOnlyRegex: RegExp | null = null;
 
   client.once(GatewayDispatchEvents.Ready, ({ data }) => {
     const { username, id: userid, discriminator } = data.user; // Destructure the username, discriminator, and id from the user data
     const tag = `${username}#${discriminator}`;
     botId = userid;
+    const safeBotId = botId && /^\d+$/.test(botId) ? botId : undefined;
+    mentionPrefixRegex = safeBotId
+      ? new RegExp(`^<@!?${safeBotId}>\\s*`)
+      : null;
+    mentionOnlyRegex = safeBotId ? new RegExp(`^<@!?${safeBotId}>`) : null;
     console.log(`Ready as ${tag}`);
   });
 
@@ -33,23 +40,22 @@ export async function registerHandlers(client: Client): Promise<void> {
     const guildPrefix = guildId ? await getGuildPrefix(guildId) : null;
     const prefix = normalizePrefix(guildPrefix ?? undefined, DEFAULT_PREFIX);
 
-    const safeBotId = botId && /^\d+$/.test(botId) ? botId : undefined;
-    const mentionPrefix = safeBotId
-      ? new RegExp(`^<@!?${safeBotId}>\\s*`)
-      : null;
-    const isMentionPrefix = mentionPrefix
-      ? mentionPrefix.test(message.content)
+    const isMentionPrefix = mentionPrefixRegex
+      ? mentionPrefixRegex.test(message.content)
       : false;
 
     const usesTextPrefix = message.content.startsWith(prefix);
     if (!usesTextPrefix && !isMentionPrefix) return;
 
-    const body = usesTextPrefix
-      ? message.content.slice(prefix.length).trim()
-      : message.content.replace(mentionPrefix ?? /^<@!?\d+>\s*/, "").trim();
-    const mentionRegex = safeBotId
-      ? new RegExp(`^<@!?${safeBotId}>`)
-      : /^<@!?\d+>/;
+    if (!usesTextPrefix && !mentionPrefixRegex) return;
+
+    let body = "";
+    if (usesTextPrefix) {
+      body = message.content.slice(prefix.length).trim();
+    } else if (mentionPrefixRegex) {
+      body = message.content.replace(mentionPrefixRegex, "").trim();
+    }
+    const mentionRegex = mentionOnlyRegex ?? /^<@!?\d+>/;
 
     // Ignore messages that are just mentions, as they are likely not intended as commands.
     // Unless the command is specifically designed to handle mentions, in which case it should be invoked with the appropriate command name.

@@ -10,12 +10,16 @@ export type CommandInvocationInput = {
 export async function recordCommandInvocation(
   input: CommandInvocationInput,
 ): Promise<void> {
-  await prisma.commandInvocation.create({
-    data: {
-      command: input.command,
-      guildId: input.guildId,
-      channelId: input.channelId,
-      userId: input.userId,
-    },
-  });
+  try {
+    await prisma.commandInvocation.create({
+      data: {
+        command: input.command,
+        guildId: input.guildId,
+        channelId: input.channelId,
+        userId: input.userId,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to record command invocation:", error);
+  }
 }

@@ -27,6 +27,7 @@ jobs:
             const prNumber = context.payload.pull_request.number;
             const reviewPrefix = "🤖 AI PR Review:";
             const reviewMarker = "<!-- ai-pr-review -->";
+            const headSha = context.payload.pull_request.head.sha;
 
             // --- helpers ------------------------------------------------------
             function parseUnifiedPatchToCandidates(patch) {
@@ -198,15 +199,24 @@ jobs:
               per_page: 100
             });
 
-            const reviewIds = new Set(
-              priorReviews
-                .filter(r => (
-                  r.user?.login === "github-actions[bot]" &&
-                  typeof r.body === "string" &&
-                  r.body.includes(reviewMarker)
-                ))
-                .map(r => r.id)
-            );
+            const priorAiReviews = priorReviews.filter(r => (
+              r.user?.login === "github-actions[bot]" &&
+              typeof r.body === "string" &&
+              r.body.includes(reviewMarker)
+            ));
+
+            const latestAiReview = priorAiReviews
+              .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())[0];
+
+            if (latestAiReview?.body) {
+              const match = latestAiReview.body.match(/Reviewed-SHA:\s*([a-f0-9]{7,40})/i);
+              if (match && match[1] === headSha) {
+                core.notice("AI review already posted for this head SHA. Skipping.");
+                return;
+              }
+            }
+
+            const reviewIds = new Set(priorAiReviews.map(r => r.id));
 
             if (reviewIds.size > 0) {
               const priorComments = await github.paginate(github.rest.pulls.listReviewComments, {
@@ -280,7 +290,7 @@ jobs:
               repo: context.repo.repo,
               pull_number: prNumber,
               event: "COMMENT",
-              body: `### 🤖 AI PR Review\n\nInline comments generated automatically.\n\n${reviewMarker}`,
+              body: `### 🤖 AI PR Review\n\nInline comments generated automatically.\n\nReviewed-SHA: ${headSha}\n${reviewMarker}`,
               comments: comments.map(c => ({
                 path: c.path,
                 line: c.line,

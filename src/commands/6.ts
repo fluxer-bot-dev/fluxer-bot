@@ -5,6 +5,9 @@ import type {
 } from "../types/command.js";
 export const name: Command["name"] = "6";
 
+export const description: Command["description"] =
+  "A command that responds with '7'.";
+
 /**
  * This command is a simple test command that responds with "7" when invoked.
  * It serves as a basic example of how to implement a command using the defined structure.

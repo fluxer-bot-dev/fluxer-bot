@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db/client.js";
 
 const DEFAULT_PREFIX_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -37,9 +38,10 @@ function pruneCache(): void {
   }
 
   while (prefixCache.size > MAX_PREFIX_CACHE_ENTRIES) {
-    const oldestKey = prefixCache.keys().next().value;
-    if (!oldestKey) return;
-    prefixCache.delete(oldestKey);
+    for (const key of prefixCache.keys()) {
+      prefixCache.delete(key);
+      break;
+    }
   }
 }
 
@@ -62,7 +64,9 @@ export async function getGuildSettings(guildId: string) {
   return prisma.guildSettings.findUnique({ where: { guildId } });
 }
 
-export async function getGuildPrefix(guildId: string): Promise<string | null> {
+export async function getGuildPrefix(
+  guildId: string,
+): Promise<string | null | undefined> {
   const cached = getCachedPrefix(guildId);
   if (cached !== undefined) return cached;
 
@@ -77,7 +81,7 @@ export async function getGuildPrefix(guildId: string): Promise<string | null> {
     return prefix;
   } catch (error) {
     console.error("Failed to fetch guild prefix:", error);
-    return null;
+    return undefined;
   }
 }
 
@@ -91,18 +95,28 @@ export async function upsertGuildSettings(input: UpsertGuildSettingsInput) {
   };
 
   if (Object.keys(updates).length === 0) {
-    const existing = await prisma.guildSettings.findUnique({
-      where: { guildId: input.guildId },
-    });
-    if (existing) return existing;
-    return prisma.guildSettings.create({
-      data: {
-        guildId: input.guildId,
-        prefix: input.prefix ?? "!",
-        locale: input.locale ?? null,
-        timezone: input.timezone ?? null,
-      },
-    });
+    try {
+      return await prisma.guildSettings.create({
+        data: {
+          guildId: input.guildId,
+          prefix: input.prefix ?? "!",
+          locale: input.locale ?? null,
+          timezone: input.timezone ?? null,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        const existing = await prisma.guildSettings.findUnique({
+          where: { guildId: input.guildId },
+        });
+        if (existing) return existing;
+      }
+
+      throw error;
+    }
   }
 
   return prisma.guildSettings.upsert({

@@ -39,6 +39,7 @@ export async function registerHandlers(client: Client): Promise<void> {
     const guildId = message.guild_id;
     const guildPrefix = guildId ? await getGuildPrefix(guildId) : null;
     const prefix = normalizePrefix(guildPrefix ?? undefined, DEFAULT_PREFIX);
+    if (!prefix) return;
 
     const isMentionPrefix = mentionPrefixRegex
       ? mentionPrefixRegex.test(message.content)

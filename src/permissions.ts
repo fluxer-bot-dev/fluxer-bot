@@ -33,7 +33,10 @@ export async function isGuildAdmin(
     if (!roleIds.has(role.id)) continue;
     if (!role.permissions) continue;
     try {
-      permissions |= BigInt(role.permissions);
+      const raw = role.permissions;
+      const parsed =
+        typeof raw === "string" || typeof raw === "number" ? BigInt(raw) : 0n;
+      permissions |= parsed;
     } catch (error) {
       console.error("Failed to parse role permissions:", error);
     }

@@ -2,3 +2,7 @@ services:
   fluxer-bot:
     env_file:
       - .env
+
+  postgres:
+    ports:
+      - "5432:5432"

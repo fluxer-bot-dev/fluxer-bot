@@ -1,7 +1,10 @@
 import { type Client, GatewayDispatchEvents } from "@discordjs/core";
 import { loadCommands } from "./commandLoader.js";
+import { recordCommandInvocation } from "./data/commandInvocations.js";
+import { getGuildPrefix } from "./data/guildSettings.js";
+import { normalizePrefix } from "./prefix.js";
 
-const PREFIX = process.env.COMMAND_PREFIX || "!";
+const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
 
 /**
  * This function registers event handlers for the bot client.
@@ -16,20 +19,44 @@ const PREFIX = process.env.COMMAND_PREFIX || "!";
 export async function registerHandlers(client: Client): Promise<void> {
   const commands = await loadCommands();
   let botId: string | undefined;
+  let mentionPrefixRegex: RegExp | null = null;
+  let mentionOnlyRegex: RegExp | null = null;
 
   client.once(GatewayDispatchEvents.Ready, ({ data }) => {
     const { username, id: userid, discriminator } = data.user; // Destructure the username, discriminator, and id from the user data
     const tag = `${username}#${discriminator}`;
     botId = userid;
+    const safeBotId = botId && /^\d+$/.test(botId) ? botId : undefined;
+    mentionPrefixRegex = safeBotId
+      ? new RegExp(`^<@!?${safeBotId}>\\s*`)
+      : null;
+    mentionOnlyRegex = safeBotId ? new RegExp(`^<@!?${safeBotId}>`) : null;
     console.log(`Ready as ${tag}`);
   });
 
   client.on(GatewayDispatchEvents.MessageCreate, async ({ data: message }) => {
     if (message.author?.bot) return;
-    if (!message.content.startsWith(PREFIX)) return;
+    const guildId = message.guild_id;
+    const guildPrefix = guildId ? await getGuildPrefix(guildId) : null;
+    const prefix = normalizePrefix(guildPrefix ?? undefined, DEFAULT_PREFIX);
+    if (!prefix) return;
 
-    const body = message.content.slice(PREFIX.length).trim();
-    const mentionRegex = botId ? new RegExp(`^<@!?${botId}>`) : /^<@!?\d+>/;
+    const isMentionPrefix = mentionPrefixRegex
+      ? mentionPrefixRegex.test(message.content)
+      : false;
+
+    const usesTextPrefix = message.content.startsWith(prefix);
+    if (!usesTextPrefix && !isMentionPrefix) return;
+
+    if (!usesTextPrefix && !mentionPrefixRegex) return;
+
+    let body = "";
+    if (usesTextPrefix) {
+      body = message.content.slice(prefix.length).trim();
+    } else if (mentionPrefixRegex) {
+      body = message.content.replace(mentionPrefixRegex, "").trim();
+    }
+    const mentionRegex = mentionOnlyRegex ?? /^<@!?\d+>/;
 
     // Ignore messages that are just mentions, as they are likely not intended as commands.
     // Unless the command is specifically designed to handle mentions, in which case it should be invoked with the appropriate command name.
@@ -40,10 +67,21 @@ export async function registerHandlers(client: Client): Promise<void> {
     // TODO: Do a help command that lists all available commands and their descriptions.
     if (!command) {
       await client.api.channels.createMessage(message.channel_id, {
-        content: `Unknown command: ${commandName}, Use \`${PREFIX}help\` to see available commands.`,
+        content: `Unknown command: ${commandName}, Use \`${prefix}help\` to see available commands.`,
         allowed_mentions: { parse: [] }, //this prevents the bot from pinging anyone in the error message.
       });
       return;
+    }
+
+    try {
+      await recordCommandInvocation({
+        command: commandName,
+        guildId: message.guild_id,
+        channelId: message.channel_id,
+        userId: message.author?.id,
+      });
+    } catch (error) {
+      console.error("Failed to record command invocation:", error);
     }
 
     await command.execute(client, message, args);

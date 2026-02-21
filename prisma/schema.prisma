@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model GuildSettings {
+  guildId   String   @id
+  prefix    String   @default("!")
+  locale    String?
+  timezone  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CommandInvocation {
+  id        Int      @id @default(autoincrement())
+  command   String
+  guildId   String?
+  channelId String
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([command, createdAt])
+  @@index([guildId, createdAt])
+}

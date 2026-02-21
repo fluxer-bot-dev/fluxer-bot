@@ -9,6 +9,10 @@ export type MessageCreatePayload = {
   message?: string;
   author?: {
     bot?: boolean;
+    id?: string;
+  };
+  member?: {
+    roles?: string[];
   };
 };
 

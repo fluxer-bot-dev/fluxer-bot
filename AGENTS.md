@@ -1,40 +1,37 @@
 # AGENTS.md
 
 ## Intent and Non-Goals
-- Intent: a minimal Fluxer bot that responds to `ping` with `pong` using the low-level discord.js core packages.
-- Non-goals: frameworks, advanced command routing, databases, hosting setup, or complex observability.
+- Intent: a small Fluxer bot that responds to `!ping` with `pong` using the low-level discord.js core packages.
+- Non-goals: advanced command routing, complex observability, or hosting setup beyond Docker.
 
 ## Project Invariants
-Architecture & Philosophy
-- Minimal architecture only.
-- No frameworks.
+Architecture & Standards
 - Message-based commands only (no slash commands).
 - Strict TypeScript must remain enabled.
 - ESM only; `.js` relative imports required.
 - No `any` in runtime code.
+- Keep runtime behavior identical unless explicitly instructed.
+
+Data & Persistence (Intended)
+- PostgreSQL is the primary database.
+- Prisma is the ORM.
+- Keep DB access in a dedicated data layer; command logic should call into that layer.
 
 Bun & Tooling
 - Bun is the package manager and runtime.
 - A lockfile must exist.
-- `bun install --frozen-lockfile` must be used in Docker builds.
-- No dependency version changes unless strictly required.
-- Husky runs via `package.json` `prepare` in dev; Docker/CI must set `CI=true` to skip it.
+- Docker builds should use `bun install --frozen-lockfile`.
+- Keep dependency upgrades intentional; avoid churn.
+- Husky runs via `package.json` `prepare` in dev; Docker/CI should set `CI=true` or `NODE_ENV=production` to skip it.
 
 Docker
-- Dockerfile must remain multi-stage.
-- Must use `oven/bun` base images.
-- Production image must not include devDependencies.
+- Dockerfile uses `oven/bun` base images.
+- Production image installs only production dependencies.
 - `.env` must never be copied into the image.
 - No secrets in image layers.
 - `docker-compose.yml` is production base.
 - `docker-compose.dev.yml` is override-only.
-- No additional services without explicit architectural justification.
-
-Constraints
-- Do not introduce logging frameworks.
-- Do not introduce ORMs.
-- Do not introduce routing abstractions.
-- Keep runtime behavior identical unless explicitly instructed.
+- Local development and production are Docker-based; include database services in Compose when persistence is added.
 
 ## Local Run + Manual Test
 ```bash
@@ -43,7 +40,7 @@ bun run dev
 ```
 Manual test plan:
 - Start the bot with `FLUXER_BOT_TOKEN` set.
-- Send `ping` in a channel the bot can read.
+- Send `!ping` in a channel the bot can read.
 - Confirm the bot replies with `pong`.
 
 ## File Layout

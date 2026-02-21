@@ -41,9 +41,7 @@ export type UpsertGuildSettingsInput = {
   timezone?: string | null;
 };
 
-export async function getGuildSettings(
-  guildId: string,
-): Promise<ReturnType<typeof prisma.guildSettings.findUnique>> {
+export async function getGuildSettings(guildId: string) {
   return prisma.guildSettings.findUnique({ where: { guildId } });
 }
 
@@ -61,19 +59,18 @@ export async function getGuildPrefix(guildId: string): Promise<string | null> {
   return prefix;
 }
 
-export async function upsertGuildSettings(
-  input: UpsertGuildSettingsInput,
-): Promise<ReturnType<typeof prisma.guildSettings.upsert>> {
+export async function upsertGuildSettings(input: UpsertGuildSettingsInput) {
   const locale = input.locale === undefined ? undefined : input.locale;
   const timezone = input.timezone === undefined ? undefined : input.timezone;
+  const updates = {
+    ...(input.prefix !== undefined ? { prefix: input.prefix } : {}),
+    ...(locale !== undefined ? { locale } : {}),
+    ...(timezone !== undefined ? { timezone } : {}),
+  };
 
   return prisma.guildSettings.upsert({
     where: { guildId: input.guildId },
-    update: {
-      prefix: input.prefix,
-      locale,
-      timezone,
-    },
+    update: updates,
     create: {
       guildId: input.guildId,
       prefix: input.prefix ?? "!",
@@ -83,16 +80,19 @@ export async function upsertGuildSettings(
   });
 }
 
-export async function setGuildPrefix(
-  guildId: string,
-  prefix: string,
-): Promise<ReturnType<typeof prisma.guildSettings.upsert>> {
+export async function setGuildPrefix(guildId: string, prefix: string) {
   const settings = await upsertGuildSettings({ guildId, prefix });
   setCachedPrefix(guildId, settings.prefix);
   return settings;
 }
 
-export async function clearGuildPrefix(guildId: string): Promise<void> {
-  await prisma.guildSettings.deleteMany({ where: { guildId } });
-  setCachedPrefix(guildId, null);
+export async function clearGuildPrefix(
+  guildId: string,
+  defaultPrefix: string,
+): Promise<void> {
+  const settings = await upsertGuildSettings({
+    guildId,
+    prefix: defaultPrefix,
+  });
+  setCachedPrefix(guildId, settings.prefix);
 }

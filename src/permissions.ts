@@ -10,14 +10,22 @@ export async function isGuildAdmin(
   const userId = message.author?.id;
 
   if (!guildId || !userId) return false;
+  let guild: Awaited<ReturnType<BotClient["api"]["guilds"]["get"]>>;
+  let roles: Awaited<ReturnType<BotClient["api"]["guilds"]["getRoles"]>>;
 
-  const guild = await client.api.guilds.get(guildId);
+  try {
+    guild = await client.api.guilds.get(guildId);
+    roles = await client.api.guilds.getRoles(guildId);
+  } catch (error) {
+    console.error("Failed to fetch guild permissions:", error);
+    return false;
+  }
+
   if (guild.owner_id === userId) return true;
 
   const memberRoleIds = message.member?.roles;
   if (!memberRoleIds || memberRoleIds.length === 0) return false;
 
-  const roles = await client.api.guilds.getRoles(guildId);
   const roleIds = new Set([guildId, ...memberRoleIds]);
 
   let permissions = 0n;
@@ -26,7 +34,9 @@ export async function isGuildAdmin(
     if (!role.permissions) continue;
     try {
       permissions |= BigInt(role.permissions);
-    } catch {}
+    } catch (error) {
+      console.error("Failed to parse role permissions:", error);
+    }
   }
 
   return (permissions & ADMINISTRATOR_BIT) === ADMINISTRATOR_BIT;

@@ -2,8 +2,9 @@ import { type Client, GatewayDispatchEvents } from "@discordjs/core";
 import { loadCommands } from "./commandLoader.js";
 import { recordCommandInvocation } from "./data/commandInvocations.js";
 import { getGuildPrefix } from "./data/guildSettings.js";
+import { normalizePrefix } from "./prefix.js";
 
-const DEFAULT_PREFIX = process.env.COMMAND_PREFIX || "!";
+const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
 
 /**
  * This function registers event handlers for the bot client.
@@ -30,9 +31,12 @@ export async function registerHandlers(client: Client): Promise<void> {
     if (message.author?.bot) return;
     const guildId = message.guild_id;
     const guildPrefix = guildId ? await getGuildPrefix(guildId) : null;
-    const prefix = guildPrefix ?? DEFAULT_PREFIX;
+    const prefix = normalizePrefix(guildPrefix ?? undefined, DEFAULT_PREFIX);
 
-    const mentionPrefix = botId ? new RegExp(`^<@!?${botId}>\s*`) : null;
+    const safeBotId = botId && /^\d+$/.test(botId) ? botId : undefined;
+    const mentionPrefix = safeBotId
+      ? new RegExp(`^<@!?${safeBotId}>\\s*`)
+      : null;
     const isMentionPrefix = mentionPrefix
       ? mentionPrefix.test(message.content)
       : false;
@@ -43,7 +47,9 @@ export async function registerHandlers(client: Client): Promise<void> {
     const body = usesTextPrefix
       ? message.content.slice(prefix.length).trim()
       : message.content.replace(mentionPrefix ?? /^<@!?\d+>\s*/, "").trim();
-    const mentionRegex = botId ? new RegExp(`^<@!?${botId}>`) : /^<@!?\d+>/;
+    const mentionRegex = safeBotId
+      ? new RegExp(`^<@!?${safeBotId}>`)
+      : /^<@!?\d+>/;
 
     // Ignore messages that are just mentions, as they are likely not intended as commands.
     // Unless the command is specifically designed to handle mentions, in which case it should be invoked with the appropriate command name.
@@ -60,12 +66,16 @@ export async function registerHandlers(client: Client): Promise<void> {
       return;
     }
 
-    await recordCommandInvocation({
-      command: commandName,
-      guildId: message.guild_id,
-      channelId: message.channel_id,
-      userId: message.author?.id,
-    });
+    try {
+      await recordCommandInvocation({
+        command: commandName,
+        guildId: message.guild_id,
+        channelId: message.channel_id,
+        userId: message.author?.id,
+      });
+    } catch (error) {
+      console.error("Failed to record command invocation:", error);
+    }
 
     await command.execute(client, message, args);
   });

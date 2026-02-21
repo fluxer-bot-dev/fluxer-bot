@@ -32,11 +32,25 @@ export async function execute(
     return;
   }
 
+  if (args.length > 1) {
+    await client.api.channels.createMessage(message.channel_id, {
+      content: "Prefixes cannot contain spaces.",
+    });
+    return;
+  }
+
   const nextPrefix = args[0]?.trim();
 
   if (!nextPrefix) {
     await client.api.channels.createMessage(message.channel_id, {
       content: "Usage: setprefix <prefix>",
+    });
+    return;
+  }
+
+  if (/\s/.test(nextPrefix)) {
+    await client.api.channels.createMessage(message.channel_id, {
+      content: "Prefixes cannot contain whitespace.",
     });
     return;
   }
@@ -48,7 +62,15 @@ export async function execute(
     return;
   }
 
-  await setGuildPrefix(guildId, nextPrefix);
+  try {
+    await setGuildPrefix(guildId, nextPrefix);
+  } catch (error) {
+    console.error("Failed to set prefix:", error);
+    await client.api.channels.createMessage(message.channel_id, {
+      content: "Failed to update the prefix. Please try again later.",
+    });
+    return;
+  }
 
   await client.api.channels.createMessage(message.channel_id, {
     content: `Prefix updated to \`${nextPrefix}\`.`,

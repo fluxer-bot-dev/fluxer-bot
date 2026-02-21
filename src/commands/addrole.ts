@@ -45,7 +45,17 @@ export async function execute(
 
   const userId = mentionMatch[1];
 
-  const roles = await client.api.guilds.getRoles(guildId);
+  let roles: Awaited<ReturnType<BotClient["api"]["guilds"]["getRoles"]>>;
+  try {
+    roles = await client.api.guilds.getRoles(guildId);
+  } catch (error) {
+    console.error("Failed to fetch roles:", error);
+    await client.api.channels.createMessage(message.channel_id, {
+      content: "Failed to fetch roles. Please try again later.",
+    });
+    return;
+  }
+
   const role = roles.find(
     (r) => r.name.toLowerCase() === roleName.toLowerCase(),
   );
@@ -63,10 +73,10 @@ export async function execute(
     await client.api.channels.createMessage(message.channel_id, {
       content: `Added role "${role.name}" to <@${userId}>!`,
     });
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+  } catch (error) {
+    console.error("Failed to add role:", error);
     await client.api.channels.createMessage(message.channel_id, {
-      content: "WIP",
+      content: "Failed to add the role. Please check permissions.",
     });
   }
 }

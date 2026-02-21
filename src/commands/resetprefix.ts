@@ -1,12 +1,13 @@
 import { clearGuildPrefix } from "../data/guildSettings.js";
 import { isGuildAdmin } from "../permissions.js";
+import { normalizePrefix } from "../prefix.js";
 import type {
   BotClient,
   Command,
   MessageCreatePayload,
 } from "../types/command.js";
 
-const DEFAULT_PREFIX = process.env.COMMAND_PREFIX || "!";
+const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
 
 export const name: Command["name"] = "resetprefix";
 
@@ -31,7 +32,15 @@ export async function execute(
     return;
   }
 
-  await clearGuildPrefix(guildId);
+  try {
+    await clearGuildPrefix(guildId, DEFAULT_PREFIX);
+  } catch (error) {
+    console.error("Failed to reset prefix:", error);
+    await client.api.channels.createMessage(message.channel_id, {
+      content: "Failed to reset the prefix. Please try again later.",
+    });
+    return;
+  }
 
   await client.api.channels.createMessage(message.channel_id, {
     content: `Prefix reset to default \`${DEFAULT_PREFIX}\`.`,

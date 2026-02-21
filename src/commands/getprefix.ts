@@ -1,11 +1,12 @@
 import { getGuildPrefix } from "../data/guildSettings.js";
+import { normalizePrefix } from "../prefix.js";
 import type {
   BotClient,
   Command,
   MessageCreatePayload,
 } from "../types/command.js";
 
-const DEFAULT_PREFIX = process.env.COMMAND_PREFIX || "!";
+const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
 
 export const name: Command["name"] = "getprefix";
 
@@ -24,7 +25,10 @@ export async function execute(
   }
 
   const guildPrefix = await getGuildPrefix(guildId);
-  const effectivePrefix = guildPrefix ?? DEFAULT_PREFIX;
+  const effectivePrefix = normalizePrefix(
+    guildPrefix ?? undefined,
+    DEFAULT_PREFIX,
+  );
 
   await client.api.channels.createMessage(message.channel_id, {
     content: `Current prefix is \`${effectivePrefix}\`.`,

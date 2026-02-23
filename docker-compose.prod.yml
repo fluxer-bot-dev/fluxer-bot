@@ -5,7 +5,3 @@ services:
   postgres:
     env_file:
       - /opt/fluxer-bot/.env
-    environment:
-      POSTGRES_USER:
-      POSTGRES_PASSWORD:
-      POSTGRES_DB:

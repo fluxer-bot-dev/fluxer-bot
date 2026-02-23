@@ -2,3 +2,6 @@ services:
   fluxer-bot:
     env_file:
       - /opt/fluxer-bot/.env
+  postgres:
+    env_file:
+      - /opt/fluxer-bot/.env

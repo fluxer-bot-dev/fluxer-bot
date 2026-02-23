@@ -5,3 +5,4 @@ services:
   postgres:
     env_file:
       - /opt/fluxer-bot/.env
+    environment: {}

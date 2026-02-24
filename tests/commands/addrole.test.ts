@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { execute } from "../../src/commands/addrole.js";
+import { normalizePrefix } from "../../src/prefix.js";
 import type {
   BotClient,
   MessageCreatePayload,
@@ -9,7 +10,6 @@ import { createMessagePayload } from "../helpers.js";
 type Role = {
   id: string;
   name: string;
-  permissions?: string | number | bigint;
 };
 
 function createAddRoleClient() {
@@ -27,6 +27,8 @@ function createAddRoleClient() {
   return { client, createMessage, getRoles, addRoleToMember };
 }
 
+const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
+
 beforeEach(() => {
   mock.clearAllMocks();
 });
@@ -34,7 +36,7 @@ beforeEach(() => {
 test("addrole requires a guild", async () => {
   const { client, createMessage, getRoles } = createAddRoleClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!addrole <@123> Admin",
+    content: `${DEFAULT_PREFIX}addrole <@123> Admin`,
     guild_id: undefined,
   });
 
@@ -49,7 +51,7 @@ test("addrole requires a guild", async () => {
 test("addrole requires a mention and role name", async () => {
   const { client, createMessage } = createAddRoleClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!addrole",
+    content: `${DEFAULT_PREFIX}addrole`,
     guild_id: "guild-1",
   });
 
@@ -63,7 +65,7 @@ test("addrole requires a mention and role name", async () => {
 test("addrole handles role fetch failure", async () => {
   const { client, createMessage, getRoles } = createAddRoleClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!addrole <@123> Admin",
+    content: `${DEFAULT_PREFIX}addrole <@123> Admin`,
     guild_id: "guild-1",
   });
 
@@ -79,7 +81,7 @@ test("addrole handles role fetch failure", async () => {
 test("addrole responds when role is missing", async () => {
   const { client, createMessage, getRoles } = createAddRoleClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!addrole <@123> Admin",
+    content: `${DEFAULT_PREFIX}addrole <@123> Admin`,
     guild_id: "guild-1",
   });
 
@@ -96,7 +98,7 @@ test("addrole adds a role when found", async () => {
   const { client, createMessage, getRoles, addRoleToMember } =
     createAddRoleClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!addrole <@123> Admin",
+    content: `${DEFAULT_PREFIX}addrole <@123> Admin`,
     guild_id: "guild-1",
   });
 
@@ -114,7 +116,7 @@ test("addrole reports failure to add role", async () => {
   const { client, createMessage, getRoles, addRoleToMember } =
     createAddRoleClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!addrole <@123> Admin",
+    content: `${DEFAULT_PREFIX}addrole <@123> Admin`,
     guild_id: "guild-1",
   });
 

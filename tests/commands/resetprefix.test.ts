@@ -1,4 +1,5 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, expect, mock, test } from "bun:test";
+import { normalizePrefix } from "../../src/prefix.js";
 import type { MessageCreatePayload } from "../../src/types/command.js";
 import { createMessagePayload, createMockClient } from "../helpers.js";
 
@@ -13,7 +14,15 @@ mock.module("../../src/permissions.js", () => ({
   isGuildAdmin,
 }));
 
-const { execute } = await import("../../src/commands/resetprefix.js");
+const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
+let execute: (
+  client: import("../../src/types/command.js").BotClient,
+  message: MessageCreatePayload,
+) => Promise<void>;
+
+beforeAll(async () => {
+  ({ execute } = await import("../../src/commands/resetprefix.js"));
+});
 
 beforeEach(() => {
   clearGuildPrefix.mockReset();
@@ -24,7 +33,7 @@ beforeEach(() => {
 test("resetprefix requires a guild", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!resetprefix",
+    content: `${DEFAULT_PREFIX}resetprefix`,
     guild_id: undefined,
   });
 
@@ -39,7 +48,7 @@ test("resetprefix requires a guild", async () => {
 test("resetprefix requires admin permissions", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!resetprefix",
+    content: `${DEFAULT_PREFIX}resetprefix`,
     guild_id: "guild-1",
   });
 
@@ -56,15 +65,15 @@ test("resetprefix requires admin permissions", async () => {
 test("resetprefix clears prefix when valid", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!resetprefix",
+    content: `${DEFAULT_PREFIX}resetprefix`,
     guild_id: "guild-1",
   });
 
   await execute(client, message);
 
-  expect(clearGuildPrefix).toHaveBeenCalledWith("guild-1", "!");
+  expect(clearGuildPrefix).toHaveBeenCalledWith("guild-1", DEFAULT_PREFIX);
   expect(createMessage).toHaveBeenCalledWith("channel-1", {
-    content: "Prefix reset to default `!`.",
+    content: `Prefix reset to default \`${DEFAULT_PREFIX}\`.`,
     allowed_mentions: { parse: [] },
   });
 });
@@ -72,7 +81,7 @@ test("resetprefix clears prefix when valid", async () => {
 test("resetprefix handles storage errors", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!resetprefix",
+    content: `${DEFAULT_PREFIX}resetprefix`,
     guild_id: "guild-1",
   });
 

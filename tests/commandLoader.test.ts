@@ -19,7 +19,6 @@ mock.module("../src/permissions.js", () => ({
 test("loadCommands loads known commands", async () => {
   const commands = await loadCommands();
 
-  expect(commands.size).toBeGreaterThanOrEqual(5);
   expect(commands.has("ping")).toBe(true);
   expect(commands.has("getprefix")).toBe(true);
   expect(commands.has("setprefix")).toBe(true);

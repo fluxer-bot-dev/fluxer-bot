@@ -1,4 +1,5 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, expect, mock, test } from "bun:test";
+import { normalizePrefix } from "../../src/prefix.js";
 import type { MessageCreatePayload } from "../../src/types/command.js";
 import { createMessagePayload, createMockClient } from "../helpers.js";
 
@@ -13,7 +14,16 @@ mock.module("../../src/permissions.js", () => ({
   isGuildAdmin,
 }));
 
-const { execute } = await import("../../src/commands/setprefix.js");
+const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
+let execute: (
+  client: import("../../src/types/command.js").BotClient,
+  message: MessageCreatePayload,
+  args: string[],
+) => Promise<void>;
+
+beforeAll(async () => {
+  ({ execute } = await import("../../src/commands/setprefix.js"));
+});
 
 beforeEach(() => {
   setGuildPrefix.mockReset();
@@ -24,7 +34,7 @@ beforeEach(() => {
 test("setprefix requires a guild", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!setprefix ?",
+    content: `${DEFAULT_PREFIX}setprefix ?`,
     guild_id: undefined,
   });
 
@@ -39,7 +49,7 @@ test("setprefix requires a guild", async () => {
 test("setprefix requires admin permissions", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!setprefix ?",
+    content: `${DEFAULT_PREFIX}setprefix ?`,
     guild_id: "guild-1",
   });
 
@@ -56,7 +66,7 @@ test("setprefix requires admin permissions", async () => {
 test("setprefix rejects prefixes with spaces", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!setprefix bad prefix",
+    content: `${DEFAULT_PREFIX}setprefix bad prefix`,
     guild_id: "guild-1",
   });
 
@@ -71,7 +81,7 @@ test("setprefix rejects prefixes with spaces", async () => {
 test("setprefix requires a prefix value", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!setprefix",
+    content: `${DEFAULT_PREFIX}setprefix`,
     guild_id: "guild-1",
   });
 
@@ -86,7 +96,7 @@ test("setprefix requires a prefix value", async () => {
 test("setprefix rejects whitespace", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!setprefix a b",
+    content: `${DEFAULT_PREFIX}setprefix a b`,
     guild_id: "guild-1",
   });
 
@@ -101,7 +111,7 @@ test("setprefix rejects whitespace", async () => {
 test("setprefix enforces max length", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!setprefix",
+    content: `${DEFAULT_PREFIX}setprefix`,
     guild_id: "guild-1",
   });
   const longPrefix = "x".repeat(33);
@@ -117,7 +127,7 @@ test("setprefix enforces max length", async () => {
 test("setprefix handles storage errors", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!setprefix ?",
+    content: `${DEFAULT_PREFIX}setprefix ?`,
     guild_id: "guild-1",
   });
 
@@ -133,7 +143,7 @@ test("setprefix handles storage errors", async () => {
 test("setprefix updates prefix when valid", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({
-    content: "!setprefix ?",
+    content: `${DEFAULT_PREFIX}setprefix ?`,
     guild_id: "guild-1",
   });
 

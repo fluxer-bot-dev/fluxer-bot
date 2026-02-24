@@ -1,4 +1,5 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, expect, mock, test } from "bun:test";
+import { normalizePrefix } from "../../src/prefix.js";
 import type { MessageCreatePayload } from "../../src/types/command.js";
 import { createMessagePayload, createMockClient } from "../helpers.js";
 
@@ -8,7 +9,15 @@ mock.module("../../src/data/guildSettings.js", () => ({
   getGuildPrefix,
 }));
 
-const { execute } = await import("../../src/commands/getprefix.js");
+const DEFAULT_PREFIX = normalizePrefix(process.env.COMMAND_PREFIX, "!");
+let execute: (
+  client: import("../../src/types/command.js").BotClient,
+  message: MessageCreatePayload,
+) => Promise<void>;
+
+beforeAll(async () => {
+  ({ execute } = await import("../../src/commands/getprefix.js"));
+});
 
 beforeEach(() => {
   getGuildPrefix.mockReset();
@@ -25,7 +34,7 @@ test("getprefix responds with default prefix outside guild", async () => {
   await execute(client, message);
 
   expect(createMessage).toHaveBeenCalledWith("channel-1", {
-    content: "Current prefix is `!`.",
+    content: `Current prefix is \`${DEFAULT_PREFIX}\`.`,
     allowed_mentions: { parse: [] },
   });
 });

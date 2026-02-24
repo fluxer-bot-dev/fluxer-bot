@@ -68,3 +68,19 @@ test("resetprefix clears prefix when valid", async () => {
     allowed_mentions: { parse: [] },
   });
 });
+
+test("resetprefix handles storage errors", async () => {
+  const { client, createMessage } = createMockClient();
+  const message: MessageCreatePayload = createMessagePayload({
+    content: "!resetprefix",
+    guild_id: "guild-1",
+  });
+
+  clearGuildPrefix.mockRejectedValueOnce(new Error("boom"));
+
+  await execute(client, message);
+
+  expect(createMessage).toHaveBeenCalledWith("channel-1", {
+    content: "Failed to reset the prefix. Please try again later.",
+  });
+});

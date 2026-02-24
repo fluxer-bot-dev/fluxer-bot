@@ -68,6 +68,68 @@ test("setprefix rejects prefixes with spaces", async () => {
   expect(setGuildPrefix).not.toHaveBeenCalled();
 });
 
+test("setprefix requires a prefix value", async () => {
+  const { client, createMessage } = createMockClient();
+  const message: MessageCreatePayload = createMessagePayload({
+    content: "!setprefix",
+    guild_id: "guild-1",
+  });
+
+  await execute(client, message, []);
+
+  expect(createMessage).toHaveBeenCalledWith("channel-1", {
+    content: "Usage: setprefix <prefix>",
+  });
+  expect(setGuildPrefix).not.toHaveBeenCalled();
+});
+
+test("setprefix rejects whitespace", async () => {
+  const { client, createMessage } = createMockClient();
+  const message: MessageCreatePayload = createMessagePayload({
+    content: "!setprefix a b",
+    guild_id: "guild-1",
+  });
+
+  await execute(client, message, ["a b"]);
+
+  expect(createMessage).toHaveBeenCalledWith("channel-1", {
+    content: "Prefixes cannot contain whitespace.",
+  });
+  expect(setGuildPrefix).not.toHaveBeenCalled();
+});
+
+test("setprefix enforces max length", async () => {
+  const { client, createMessage } = createMockClient();
+  const message: MessageCreatePayload = createMessagePayload({
+    content: "!setprefix",
+    guild_id: "guild-1",
+  });
+  const longPrefix = "x".repeat(33);
+
+  await execute(client, message, [longPrefix]);
+
+  expect(createMessage).toHaveBeenCalledWith("channel-1", {
+    content: "Prefix must be 32 characters or fewer.",
+  });
+  expect(setGuildPrefix).not.toHaveBeenCalled();
+});
+
+test("setprefix handles storage errors", async () => {
+  const { client, createMessage } = createMockClient();
+  const message: MessageCreatePayload = createMessagePayload({
+    content: "!setprefix ?",
+    guild_id: "guild-1",
+  });
+
+  setGuildPrefix.mockRejectedValueOnce(new Error("boom"));
+
+  await execute(client, message, ["?"]);
+
+  expect(createMessage).toHaveBeenCalledWith("channel-1", {
+    content: "Failed to update the prefix. Please try again later.",
+  });
+});
+
 test("setprefix updates prefix when valid", async () => {
   const { client, createMessage } = createMockClient();
   const message: MessageCreatePayload = createMessagePayload({

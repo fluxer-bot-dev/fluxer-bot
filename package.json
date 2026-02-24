@@ -7,6 +7,8 @@
     "dev": "bun --watch src/index.ts",
     "build": "bunx tsc",
     "start": "bun src/index.ts",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov",
     "db:generate": "bunx prisma generate",
     "db:migrate": "bunx prisma migrate dev",
     "db:deploy": "bunx prisma migrate deploy",

@@ -99,6 +99,12 @@ bun run typecheck
 bun run build
 ```
 
+## Testing
+
+```bash
+bun run test
+```
+
 ## Lint & Format
 
 ```bash

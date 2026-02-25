@@ -23,7 +23,7 @@
     "@discordjs/core": "^2.4.0",
     "@discordjs/rest": "^2.6.0",
     "@discordjs/ws": "2.0.3",
-    "@prisma/client": "^6.5.0",
+    "@prisma/client": "^7.4.1",
     "dotenv": "^16.4.7",
     "prisma": "^6.5.0"
   },

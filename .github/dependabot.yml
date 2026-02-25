@@ -1,0 +1,16 @@
+version: 2
+
+updates:
+  # Keep GitHub Action versions (like actions/checkout) up to date.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Keep npm-style dependencies in package.json up to date.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+

@@ -1,8 +1,9 @@
 name: AI PR Review (inline)
 
+# Run only on open/reopen so we don't post a new set of comments on every push.
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, reopened]
 
 permissions:
   contents: read

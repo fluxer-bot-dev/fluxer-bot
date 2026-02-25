@@ -2,7 +2,7 @@ name: AI PR Review (inline)
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, reopened]
 
 permissions:
   contents: read

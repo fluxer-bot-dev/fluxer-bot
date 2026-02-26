@@ -23,9 +23,9 @@
     "@discordjs/core": "^2.4.0",
     "@discordjs/rest": "^2.6.0",
     "@discordjs/ws": "2.0.4",
-    "@prisma/client": "^7.4.1",
+    "@prisma/client": "^6.19.2",
     "dotenv": "^17.3.1",
-    "prisma": "^7.4.1"
+    "prisma": "^6.19.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.4",
@@ -39,11 +39,12 @@
     "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [
       "biome check --files-ignore-unknown=true",
       "biome check --write --no-errors-on-unmatched",
-      "biome check --write --organize-imports-enabled=false --no-errors-on-unmatched",
       "biome check --write --unsafe --no-errors-on-unmatched",
       "biome format --write --no-errors-on-unmatched",
       "biome lint --write --no-errors-on-unmatched"
     ],
-    "*": ["biome check --no-errors-on-unmatched --files-ignore-unknown=true"]
+    "*": [
+      "biome check --no-errors-on-unmatched --files-ignore-unknown=true"
+    ]
   }
 }

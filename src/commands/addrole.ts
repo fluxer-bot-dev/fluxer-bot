@@ -5,6 +5,8 @@ import type {
 } from "../types/command.js";
 
 export const name: Command["name"] = "addrole";
+export const description: Command["description"] =
+  "Adds a role to a user in the guild. Usage: !addrole @user <roleName>";
 /**
  * This command allows you to add a role to a user in the guild.
  * The command expects two arguments: the user's tag (e.g., user#0000) and the role ID.

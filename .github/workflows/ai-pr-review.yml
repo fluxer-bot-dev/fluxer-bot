@@ -22,7 +22,7 @@ jobs:
         uses: actions/github-script@v8
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: gpt-5.2
+          OPENAI_MODEL: ${{ vars.AI_PR_REVIEW_MODEL || 'gpt-5-mini' }}
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
@@ -112,7 +112,7 @@ jobs:
                   "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                  model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+                  model: process.env.OPENAI_MODEL,
                   input: prompt,
                   max_output_tokens: 1200,
                   temperature: 0,

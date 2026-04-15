@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post inline PR review comments
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.AI_PR_REVIEW_MODEL || 'gpt-5-mini' }}
